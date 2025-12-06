@@ -18,7 +18,7 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
 # Game settings
-GAME_TITLE = "Pokemon Adventure"
+GAME_TITLE = "Pokemon: Cursor Version"
 
 # Tile size for pixel art (16x16 or 32x32)
 TILE_SIZE = 32

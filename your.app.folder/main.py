@@ -1,7 +1,6 @@
 """
 Pokemon-style 2D Pixel Art Game
 Main entry point for the game
-Supports both desktop and web (browser) deployment
 """
 
 import pygame
@@ -54,13 +53,13 @@ class Game:
         pygame.display.flip()
     
     async def run(self):
-        """Main game loop (async for web compatibility)"""
+        """Main game loop"""
         while self.running:
             self.handle_events()
             self.update()
             self.render()
             self.clock.tick(Config.FPS)
-            await asyncio.sleep(0)  # Yield control for web compatibility
+            await asyncio.sleep(0)
 
 
 async def main():
@@ -72,8 +71,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    # Always use async mode (works for both web and desktop)
-    # Web platform detection happens automatically in pygbag
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
