@@ -4,6 +4,7 @@ import { CharacterSelectionScene } from './scenes/CharacterSelectionScene';
 import { PokemonSelectionScene } from './scenes/PokemonSelectionScene';
 import { HouseVillageScene } from './scenes/HouseVillageScene';
 import { Config } from './config';
+import { loadPokemonFont } from './font_loader';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -12,6 +13,11 @@ function App() {
   const lastTimeRef = useRef<number>(0);
 
   useEffect(() => {
+    // Load font in background (non-blocking)
+    loadPokemonFont().catch((error) => {
+      console.warn('Font loading failed, continuing with fallback:', error);
+    });
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -24,6 +30,9 @@ function App() {
     canvas.style.width = `${Config.SCREEN_WIDTH * 2}px`;
     canvas.style.height = `${Config.SCREEN_HEIGHT * 2}px`;
     canvas.style.imageRendering = 'pixelated';
+    
+    // Disable image smoothing for pixel-perfect rendering
+    ctx.imageSmoothingEnabled = false;
 
     // Initialize scene manager
     const sceneManager = new SceneManager();

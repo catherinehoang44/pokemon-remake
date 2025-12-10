@@ -10,7 +10,9 @@ export class AudioManager {
   private sfxVolume = 0.6;
   private muted = false;
   private currentMusic: HTMLAudioElement | null = null;
+  private currentMusicPath: string | null = null; // Track which music is currently playing
   private soundEffects: Map<string, HTMLAudioElement> = new Map();
+  private playingSoundEffects: Map<string, HTMLAudioElement> = new Map(); // Track currently playing sounds
   private userHasInteracted = false;
   private musicLoaded = false;
 
@@ -52,7 +54,13 @@ export class AudioManager {
 
   async loadMusic(path: string, loop: boolean = true): Promise<HTMLAudioElement | null> {
     try {
-      // Stop current music if playing
+      // If the same music is already playing, don't restart it
+      if (this.currentMusic && this.currentMusicPath === path && !this.currentMusic.paused) {
+        // Same music is already playing, just return it
+        return this.currentMusic;
+      }
+
+      // Stop current music if playing (different track or paused)
       this.stopMusic();
 
       const audio = new Audio(path);
@@ -67,6 +75,7 @@ export class AudioManager {
       });
 
       this.currentMusic = audio;
+      this.currentMusicPath = path;
       this.musicLoaded = true;
 
       // Play if user has already interacted
@@ -82,6 +91,11 @@ export class AudioManager {
   }
 
   playMusic(path: string, loop: boolean = true): void {
+    // If the same music is already playing, don't do anything
+    if (this.currentMusic && this.currentMusicPath === path && !this.currentMusic.paused) {
+      return;
+    }
+
     this.loadMusic(path, loop).catch((error) => {
       console.warn('Error playing music:', error);
     });
@@ -91,21 +105,43 @@ export class AudioManager {
     if (this.currentMusic) {
       this.currentMusic.pause();
       this.currentMusic.currentTime = 0;
+      // Don't clear currentMusicPath here - we want to track what was playing
     }
   }
 
-  playSoundEffect(name: string): void {
-    if (this.muted) return;
+  playSoundEffect(name: string): HTMLAudioElement | null {
+    if (this.muted) return null;
+
+    // Check if this sound effect is already playing
+    const currentlyPlaying = this.playingSoundEffects.get(name);
+    if (currentlyPlaying && !currentlyPlaying.paused && !currentlyPlaying.ended) {
+      // Sound is already playing, don't play another instance
+      return currentlyPlaying;
+    }
 
     const audio = this.soundEffects.get(name);
     if (audio) {
-      // Clone and play to allow overlapping sounds
+      // Clone and play
       const clone = audio.cloneNode() as HTMLAudioElement;
       clone.volume = this.sfxVolume;
+      
+      // Track this playing sound
+      this.playingSoundEffects.set(name, clone);
+      
+      // Remove from tracking when it finishes
+      clone.addEventListener('ended', () => {
+        this.playingSoundEffects.delete(name);
+      });
+      
       clone.play().catch((error) => {
         console.warn(`Could not play sound effect ${name}:`, error);
+        this.playingSoundEffects.delete(name);
       });
+      
+      return clone;
     }
+    
+    return null;
   }
 
   setMusicVolume(volume: number): void {

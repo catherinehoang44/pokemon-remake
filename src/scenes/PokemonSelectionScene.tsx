@@ -24,19 +24,24 @@ export class PokemonSelectionScene {
   }
 
   private async loadFont(): Promise<void> {
-    try {
-      const fontFace = new FontFace(
-        'Pokemon Pixel Font',
-        `url(${Config.FONTS_PATH}/pokemon_pixel_font.ttf)`
-      );
-      await fontFace.load();
-      document.fonts.add(fontFace);
+    // Font should already be loaded by font_loader, but check anyway
+    if (document.fonts.check('32px "Pokemon Pixel Font"')) {
       this.fontLoaded = true;
-    } catch (error) {
-      console.warn('Unable to load Pokemon pixel font, using fallback:', error);
-      this.fontLarge = '48px Arial, sans-serif';
-      this.fontMedium = '32px Arial, sans-serif';
-      this.fontSmall = '24px Arial, sans-serif';
+    } else {
+      try {
+        const fontFace = new FontFace(
+          'Pokemon Pixel Font',
+          `url(${Config.FONTS_PATH}/pokemon_pixel_font.ttf)`
+        );
+        await fontFace.load();
+        document.fonts.add(fontFace);
+        this.fontLoaded = true;
+      } catch (error) {
+        console.warn('Unable to load Pokemon pixel font, using fallback:', error);
+        this.fontLarge = '48px Arial, sans-serif';
+        this.fontMedium = '32px Arial, sans-serif';
+        this.fontSmall = '24px Arial, sans-serif';
+      }
     }
   }
 

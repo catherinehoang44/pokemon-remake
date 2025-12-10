@@ -93,6 +93,9 @@ export class SpriteSheet {
       const ctx = canvas.getContext('2d');
       if (!ctx) return null;
 
+      // Disable image smoothing for pixel-perfect rendering
+      ctx.imageSmoothingEnabled = false;
+
       ctx.drawImage(
         this.image,
         x,
