@@ -23,9 +23,7 @@ __pycache__/
 venv/
 ENV/
 
-# Build artifacts
-your.app.folder/build/
-your.app.folder/pokemon-cursor/
+# Build artifacts (removed - no longer needed)
 
 # Editor directories and files
 .vscode/*

@@ -14,9 +14,29 @@ export class CharacterSelectionScene {
   private cursorPos: number = 0;
   private confirmed: boolean = false;
   private onChangeScene?: (sceneName: string) => void;
+  private fontLarge: string = '48px "Pokemon Pixel Font", Arial, sans-serif';
+  private fontMedium: string = '32px "Pokemon Pixel Font", Arial, sans-serif';
+  private fontLoaded = false;
 
   constructor(onChangeScene?: (sceneName: string) => void) {
     this.onChangeScene = onChangeScene;
+    this.loadFont();
+  }
+
+  private async loadFont(): Promise<void> {
+    try {
+      const fontFace = new FontFace(
+        'Pokemon Pixel Font',
+        `url(${Config.FONTS_PATH}/pokemon_pixel_font.ttf)`
+      );
+      await fontFace.load();
+      document.fonts.add(fontFace);
+      this.fontLoaded = true;
+    } catch (error) {
+      console.warn('Unable to load Pokemon pixel font, using fallback:', error);
+      this.fontLarge = '48px Arial, sans-serif';
+      this.fontMedium = '32px Arial, sans-serif';
+    }
   }
 
   onEnter(): void {
@@ -54,8 +74,9 @@ export class CharacterSelectionScene {
 
     // Title
     ctx.fillStyle = `rgb(${Config.BLACK.join(',')})`;
-    ctx.font = '48px Arial';
+    ctx.font = this.fontLarge;
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
     ctx.fillText('Choose Your Character', Config.SCREEN_WIDTH / 2, 80);
 
     // Draw character options
@@ -83,13 +104,15 @@ export class CharacterSelectionScene {
 
       // Character name
       ctx.fillStyle = `rgb(${Config.BLACK.join(',')})`;
-      ctx.font = '32px Arial';
+      ctx.font = this.fontMedium;
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
       ctx.fillText(character.name, character.x, character.y + 60);
     }
 
     // Instructions or confirmation message
-    ctx.font = '32px Arial';
+    ctx.font = this.fontMedium;
+    ctx.textBaseline = 'top';
     if (this.confirmed) {
       ctx.fillStyle = `rgb(${Config.GREEN.join(',')})`;
       ctx.fillText(

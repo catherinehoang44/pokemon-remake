@@ -874,7 +874,9 @@ export class HouseVillageScene {
 
       if (this.battleLugiaVisible && this.battleLugiaFrames.length > 0) {
         const frame = Math.min(this.battleLugiaCurrentFrame, this.battleLugiaFrames.length - 1);
-        ctx.drawImage(this.battleLugiaFrames[frame], this.battleLugiaX, this.battleLugiaY);
+        const lugiaImg = this.battleLugiaFrames[frame];
+        // Draw at original size (no scaling)
+        ctx.drawImage(lugiaImg, this.battleLugiaX, this.battleLugiaY, lugiaImg.width, lugiaImg.height);
       }
 
       if (this.battlePokemonstatVisible && this.battlePokemonstat) {
@@ -883,7 +885,9 @@ export class HouseVillageScene {
 
       if (this.battleVenuVisible && this.battleVenuFrames.length > 0) {
         const frame = Math.min(this.battleVenuCurrentFrame, this.battleVenuFrames.length - 1);
-        ctx.drawImage(this.battleVenuFrames[frame], this.battleVenuX, this.battleVenuY);
+        const venuImg = this.battleVenuFrames[frame];
+        // Draw at original size (no scaling)
+        ctx.drawImage(venuImg, this.battleVenuX, this.battleVenuY, venuImg.width, venuImg.height);
       }
 
       if (this.battleVenuStatVisible && this.battleVenuStat) {
@@ -898,37 +902,132 @@ export class HouseVillageScene {
 
         // Draw battle dialog text
         if (this.battleDialogAlpha >= 255) {
-          ctx.fillStyle = 'white';
+          ctx.fillStyle = 'rgb(255, 255, 255)'; // White text
           ctx.font = this.dialogFont;
           ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
           const textX = 32;
           const dialogHeight = this.battleDialog.height;
+          const maxTextWidth = Config.SCREEN_WIDTH / 2;
 
           // Lugia text
           const lugiaLine1 = 'A wild Bugia';
           const lugiaLine2 = 'appeared!';
+          
+          // Measure text
+          ctx.font = this.dialogFont;
           const lugiaLine1Metrics = ctx.measureText(lugiaLine1);
           const lugiaLine2Metrics = ctx.measureText(lugiaLine2);
-          const totalTextHeight = lugiaLine1Metrics.actualBoundingBoxAscent + lugiaLine2Metrics.actualBoundingBoxAscent;
+          
+          // Scale down if needed (like original)
+          let lugiaLine1Width = lugiaLine1Metrics.width;
+          let lugiaLine1Height = lugiaLine1Metrics.actualBoundingBoxAscent + lugiaLine1Metrics.actualBoundingBoxDescent;
+          let lugiaLine2Width = lugiaLine2Metrics.width;
+          let lugiaLine2Height = lugiaLine2Metrics.actualBoundingBoxAscent + lugiaLine2Metrics.actualBoundingBoxDescent;
+          
+          if (lugiaLine1Width > maxTextWidth) {
+            const scaleFactor = maxTextWidth / lugiaLine1Width;
+            lugiaLine1Width *= scaleFactor;
+            lugiaLine1Height *= scaleFactor;
+          }
+          if (lugiaLine2Width > maxTextWidth) {
+            const scaleFactor = maxTextWidth / lugiaLine2Width;
+            lugiaLine2Width *= scaleFactor;
+            lugiaLine2Height *= scaleFactor;
+          }
+          
+          const totalTextHeight = lugiaLine1Height + lugiaLine2Height;
           const line1Y = this.battleDialogY + (dialogHeight - totalTextHeight) / 2;
-          const line2Y = line1Y + lugiaLine1Metrics.actualBoundingBoxAscent;
+          const line2Y = line1Y + lugiaLine1Height;
 
           // Draw Lugia text with fade
           if (this.battleTextLugiaAlpha > 0) {
             ctx.globalAlpha = this.battleTextLugiaAlpha / 255;
-            ctx.fillText(lugiaLine1, textX, line1Y);
-            ctx.fillText(lugiaLine2, textX, line2Y);
+            if (lugiaLine1Width !== lugiaLine1Metrics.width) {
+              // Need to scale - create a temporary canvas
+              const tempCanvas = document.createElement('canvas');
+              const tempCtx = tempCanvas.getContext('2d');
+              if (tempCtx) {
+                tempCanvas.width = lugiaLine1Width;
+                tempCanvas.height = lugiaLine1Height;
+                tempCtx.font = this.dialogFont;
+                tempCtx.fillStyle = 'rgb(255, 255, 255)';
+                tempCtx.fillText(lugiaLine1, 0, lugiaLine1Height * 0.8);
+                ctx.drawImage(tempCanvas, textX, line1Y);
+              }
+            } else {
+              ctx.fillText(lugiaLine1, textX, line1Y);
+            }
+            if (lugiaLine2Width !== lugiaLine2Metrics.width) {
+              const tempCanvas = document.createElement('canvas');
+              const tempCtx = tempCanvas.getContext('2d');
+              if (tempCtx) {
+                tempCanvas.width = lugiaLine2Width;
+                tempCanvas.height = lugiaLine2Height;
+                tempCtx.font = this.dialogFont;
+                tempCtx.fillStyle = 'rgb(255, 255, 255)';
+                tempCtx.fillText(lugiaLine2, 0, lugiaLine2Height * 0.8);
+                ctx.drawImage(tempCanvas, textX, line2Y);
+              }
+            } else {
+              ctx.fillText(lugiaLine2, textX, line2Y);
+            }
           }
 
           // Venusaur text
           const venusaurLine1 = 'What should';
           const venusaurLine2 = 'Venusaur do?';
+          
+          const venusaurLine1Metrics = ctx.measureText(venusaurLine1);
+          const venusaurLine2Metrics = ctx.measureText(venusaurLine2);
+          
+          let venusaurLine1Width = venusaurLine1Metrics.width;
+          let venusaurLine1Height = venusaurLine1Metrics.actualBoundingBoxAscent + venusaurLine1Metrics.actualBoundingBoxDescent;
+          let venusaurLine2Width = venusaurLine2Metrics.width;
+          let venusaurLine2Height = venusaurLine2Metrics.actualBoundingBoxAscent + venusaurLine2Metrics.actualBoundingBoxDescent;
+          
+          if (venusaurLine1Width > maxTextWidth) {
+            const scaleFactor = maxTextWidth / venusaurLine1Width;
+            venusaurLine1Width *= scaleFactor;
+            venusaurLine1Height *= scaleFactor;
+          }
+          if (venusaurLine2Width > maxTextWidth) {
+            const scaleFactor = maxTextWidth / venusaurLine2Width;
+            venusaurLine2Width *= scaleFactor;
+            venusaurLine2Height *= scaleFactor;
+          }
 
           // Draw Venusaur text with fade
           if (this.battleTextVenusaurAlpha > 0) {
             ctx.globalAlpha = this.battleTextVenusaurAlpha / 255;
-            ctx.fillText(venusaurLine1, textX, line1Y);
-            ctx.fillText(venusaurLine2, textX, line2Y);
+            if (venusaurLine1Width !== venusaurLine1Metrics.width) {
+              const tempCanvas = document.createElement('canvas');
+              const tempCtx = tempCanvas.getContext('2d');
+              if (tempCtx) {
+                tempCanvas.width = venusaurLine1Width;
+                tempCanvas.height = venusaurLine1Height;
+                tempCtx.font = this.dialogFont;
+                tempCtx.fillStyle = 'rgb(255, 255, 255)';
+                tempCtx.fillText(venusaurLine1, 0, venusaurLine1Height * 0.8);
+                ctx.drawImage(tempCanvas, textX, line1Y);
+              }
+            } else {
+              ctx.fillText(venusaurLine1, textX, line1Y);
+            }
+            if (venusaurLine2Width !== venusaurLine2Metrics.width) {
+              const tempCanvas = document.createElement('canvas');
+              const tempCtx = tempCanvas.getContext('2d');
+              if (tempCtx) {
+                tempCanvas.width = venusaurLine2Width;
+                tempCanvas.height = venusaurLine2Height;
+                tempCtx.font = this.dialogFont;
+                tempCtx.fillStyle = 'rgb(255, 255, 255)';
+                tempCtx.fillText(venusaurLine2, 0, venusaurLine2Height * 0.8);
+                ctx.drawImage(tempCanvas, textX, line2Y);
+              }
+            } else {
+              ctx.fillText(venusaurLine2, textX, line2Y);
+            }
           }
 
           ctx.globalAlpha = 1.0;
@@ -1003,9 +1102,10 @@ export class HouseVillageScene {
           ctx.drawImage(this.dialogImage, dialogX, this.dialogSlideY);
 
           if (this.dialogText) {
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = `rgb(${Config.BLACK.join(',')})`; // Black text
             ctx.font = this.dialogFont;
             ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
             const textX = 48;
             const textY = this.dialogSlideY + (this.dialogImage.height - 32) / 2;
             ctx.fillText(this.dialogText, textX, textY);
