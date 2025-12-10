@@ -1429,9 +1429,15 @@ export class HouseVillageScene {
       if (this.battleTrainerVisible && this.battleTrainerSprites.length > 0 && this.battleTrainerAlpha > 0) {
         const frame = Math.min(this.battleTrainerCurrentFrame, this.battleTrainerSprites.length - 1);
         const trainerSprite = this.battleTrainerSprites[frame];
-        ctx.globalAlpha = this.battleTrainerAlpha / 255;
-        ctx.drawImage(trainerSprite, this.battleTrainerX, this.battleTrainerY);
-        ctx.globalAlpha = 1.0;
+        // During battle (fadeState === 'faded'), always render at 100% opacity
+        if (this.fadeState === 'faded') {
+          ctx.drawImage(trainerSprite, this.battleTrainerX, this.battleTrainerY);
+        } else {
+          // Only use alpha during fade transitions
+          ctx.globalAlpha = this.battleTrainerAlpha / 255;
+          ctx.drawImage(trainerSprite, this.battleTrainerX, this.battleTrainerY);
+          ctx.globalAlpha = 1.0;
+        }
       }
 
       if (this.battleWaterVisible && this.battleWater) {
@@ -1700,6 +1706,20 @@ export class HouseVillageScene {
         ctx.globalAlpha = 0.95;
         ctx.drawImage(this.pokemonScreenImage, 0, 0, Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT);
         ctx.globalAlpha = 1.0;
+        
+        // Draw "BACK" button in pokemon screen (bottom right area)
+        // Position: 22px from bottom, 8px from right, 96x21
+        const textBoxWidth = 96;
+        const textBoxHeight = 21;
+        const textBoxX = Config.SCREEN_WIDTH - 8 - textBoxWidth;
+        const textBoxY = Config.SCREEN_HEIGHT - 22 - textBoxHeight;
+        
+        // Draw "BACK" text (center aligned, white)
+        ctx.fillStyle = 'rgb(255, 255, 255)';
+        ctx.font = '19px "Pokemon Pixel Font", Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('BACK', textBoxX + textBoxWidth / 2, textBoxY + textBoxHeight / 2);
       }
 
       // Draw combat UI (shown when Fight is clicked, above battle menu)
@@ -1765,6 +1785,7 @@ export class HouseVillageScene {
         }
         
         // Right grid: Draw move details (updates based on left grid hover)
+        // Position in the far right cell grid (right half of combat UI)
         const rightGridX = combatUIX + this.combatUI.width - this.combatUIPadding - this.combatUIRightGridContentWidth;
         const rightGridY = combatUIY + this.combatUIPadding;
         
@@ -1850,11 +1871,12 @@ export class HouseVillageScene {
       }
 
       // Draw battle menu UI (on top, highest z-index, but hide when combat UI is visible)
+      // Position: bottom right, directly on top of whatever is there (highest z-index)
       if (this.battleMenuVisible && this.battleMenuUI && !this.bagScreenVisible && !this.pokemonScreenVisible && !this.combatUIVisible) {
         // Position menu touching bottom right corner (no padding, like Python)
-        const dialogHeight = this.battleDialog ? this.battleDialog.height : 0;
+        // Should be on top of battle dialog and other elements
         this.battleMenuX = Config.SCREEN_WIDTH - this.battleMenuUI.width;
-        this.battleMenuY = Config.SCREEN_HEIGHT - dialogHeight - this.battleMenuUI.height;
+        this.battleMenuY = Config.SCREEN_HEIGHT - this.battleMenuUI.height;
         
         // Calculate cell dimensions with padding (like Python version)
         const usableWidth = this.battleMenuUI.width - (this.battleMenuPadding * 2);
