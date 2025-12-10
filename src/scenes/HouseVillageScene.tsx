@@ -30,8 +30,6 @@ export class HouseVillageScene {
   private battleTextFadeSpeed = 5;
   private battleSlideSpeedBase = 5;
   private battleTrainerAnimationSpeed = 0.2;
-  private battleLugiaAnimationSpeed = 0.1;
-  private battleVenuAnimationSpeed = 0.1;
 
   // Map and player
   private mapImage: HTMLImageElement | null = null;
@@ -78,13 +76,11 @@ export class HouseVillageScene {
   private dialogFullyVisible = false;
   private dialogText = '';
   private dialogFont: string = '32px "Pokemon Pixel Font", Arial, sans-serif';
-  private fontLoaded = false;
 
   // Battle
   private fightingBackground: HTMLImageElement | null = null;
   private fadeState: FadeState = 'none';
   private fadeAlpha = 0;
-  private fadeComplete = false;
   private dialogPauseTimer = 0;
   private dialogPauseDuration = 2000;
   private battleAnimationsStarted = false;
@@ -142,7 +138,6 @@ export class HouseVillageScene {
   private battleVenuStatVisible = true;
 
   // Battle text
-  private battleTextState: 'lugia' | 'venusaur' | 'transitioning' = 'lugia';
   private battleTextLugiaAlpha = 255;
   private battleTextVenusaurAlpha = 0;
   private battleTextFading = false;
@@ -279,7 +274,6 @@ export class HouseVillageScene {
       }
 
       // Calculate Lugia position
-      const gridSize = 32;
       const lugiaTargetCellX = Math.floor(this.mapWidth / 32) / 2 - 3;
       const lugiaTargetCellY = Math.floor(this.mapHeight / 32) / 4 - 5;
       const [lugiaPixelX, lugiaPixelY] = this.cellToPixel(lugiaTargetCellX, lugiaTargetCellY);
@@ -1803,7 +1797,6 @@ export class HouseVillageScene {
               
               // Draw text with white outline for visibility
               const text = moveName.toUpperCase();
-              const textMetrics = ctx.measureText(text);
               const outlineWidth = 2;
               
               // Draw outline
@@ -1840,10 +1833,8 @@ export class HouseVillageScene {
           const moveDetails = this.combatUIMoveDetails[selectedMove];
           
           // Helper function to render text with white outline
-          const renderTextWithOutline = (text: string, x: number, y: number, alignRight = false) => {
+          const renderTextWithOutline = (text: string, x: number, y: number, _alignRight = false) => {
             const outlineWidth = 2;
-            const textMetrics = ctx.measureText(text);
-            const textHeight = 19; // Font size
             
             // Draw outline (multiple passes)
             ctx.strokeStyle = 'rgb(255, 255, 255)';

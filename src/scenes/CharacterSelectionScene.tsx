@@ -16,7 +16,6 @@ export class CharacterSelectionScene {
   private onChangeScene?: (sceneName: string) => void;
   private fontLarge: string = '48px "Pokemon Pixel Font", Arial, sans-serif';
   private fontMedium: string = '32px "Pokemon Pixel Font", Arial, sans-serif';
-  private fontLoaded = false;
 
   constructor(onChangeScene?: (sceneName: string) => void) {
     this.onChangeScene = onChangeScene;

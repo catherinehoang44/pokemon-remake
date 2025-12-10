@@ -3,7 +3,7 @@
  * Handles music and sound effects playback
  */
 
-import { Config } from './config';
+// Config not currently used in audio manager
 
 export class AudioManager {
   private musicVolume = 0.3;
