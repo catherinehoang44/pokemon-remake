@@ -1409,9 +1409,36 @@ export class HouseVillageScene {
           if (progress >= 1.0) {
             this.attackPulseEndVisible = false;
             this.attackSequenceActive = false;
+            // Trigger end scene after prompt pulse completes
+            this.startEndScene();
           }
         }
       }
+    }
+  }
+
+  private startEndScene(): void {
+    // Trigger scene change to end scene
+    // For now, we'll use a simple approach - change to a different scene or show end screen
+    // You can customize this based on your end scene implementation
+    if (this.onChangeScene) {
+      // If you have an end scene, change to it here
+      // this.onChangeScene('end');
+      
+      // For now, let's just log that the end scene should start
+      // You can implement the full end scene animation sequence here
+      console.log('End scene should start now');
+      
+      // TODO: Implement end scene sequence:
+      // 1. Health bar animation (decrease Lugia HP to 0)
+      // 2. Lugia fall animation
+      // 3. "Bugia fainted!" text
+      // 4. Black background fade-in
+      // 5. End Venusaur image animation
+      // 6. Pokemon shine sprite
+      // 7. End background image
+      // 8. Cursor version SVG
+      // 9. Press-r SVG
     }
   }
 
