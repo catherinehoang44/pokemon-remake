@@ -1520,9 +1520,15 @@ export class HouseVillageScene {
 
       // Draw battle dialog
       if (this.battleDialogVisible && this.battleDialog) {
-        ctx.globalAlpha = this.battleDialogAlpha / 255;
-        ctx.drawImage(this.battleDialog, this.battleDialogX, this.battleDialogY);
-        ctx.globalAlpha = 1.0;
+        // During battle (fadeState === 'faded'), always render at 100% opacity
+        if (this.fadeState === 'faded') {
+          ctx.drawImage(this.battleDialog, this.battleDialogX, this.battleDialogY);
+        } else {
+          // Only use alpha during fade transitions
+          ctx.globalAlpha = this.battleDialogAlpha / 255;
+          ctx.drawImage(this.battleDialog, this.battleDialogX, this.battleDialogY);
+          ctx.globalAlpha = 1.0;
+        }
 
         // Draw battle dialog text
         if (this.battleDialogAlpha >= 255) {
