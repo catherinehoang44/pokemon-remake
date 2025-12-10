@@ -259,18 +259,50 @@ class PokemonMapScene:
         
         # Music state
         self.battle_music_started = False  # Track if battle music has started
+        self.battle_music_preloaded = False  # Track if battle music has been preloaded
+        # Use the exact filename as it appears in the directory
+        self.battle_music_path = os.path.join(Config.SOUNDS_PATH, "battle.wav")
         
-        # Initialize mixer and load music
-        pygame.mixer.init()
-        # Load map music
-        map_music_path = os.path.join(Config.SOUNDS_PATH, "32 Mt. Moon.mp3")
+        # Track user interaction for browser autoplay policy
+        # Browsers require user interaction before audio can play
+        self.user_has_interacted = False
+        self.map_music_loaded = False  # Track if map music has been loaded (but not played yet)
+        self.show_start_prompt = True  # Show "Click to Start" prompt until user interacts
+        
+        # Ensure mixer is initialized (should already be done in main.py, but ensure it here too)
+        # Use default settings for better WAV compatibility in pygbag/web
+        if not pygame.mixer.get_init():
+            pygame.mixer.init()
+        # Load map music (but don't play until user interacts)
+        map_music_path = os.path.join(Config.SOUNDS_PATH, "mtmoon.wav")
         try:
+            # Check if file exists (for debugging)
+            file_exists = os.path.exists(map_music_path)
+            print(f"Loading map music: {map_music_path}")
+            print(f"File exists: {file_exists}")
+            if not file_exists:
+                print(f"WARNING: Map music file not found at {map_music_path}")
+                # Try alternative path
+                alt_path = os.path.join("your.app.folder", Config.SOUNDS_PATH, "mtmoon.wav")
+                if os.path.exists(alt_path):
+                    map_music_path = alt_path
+                    print(f"Using alternative path: {alt_path}")
+            
+            # Load the music but don't play it yet (wait for user interaction)
             pygame.mixer.music.load(map_music_path)
-            pygame.mixer.music.set_volume(self.music_volume)  # Set volume AFTER loading (fixes volume issue)
-            pygame.mixer.music.play(-1)  # -1 means loop indefinitely
+            pygame.mixer.music.set_volume(self.music_volume)  # Set volume AFTER loading
+            self.map_music_loaded = True
+            print(f"Map music loaded (will play after user interaction)")
+            print(f"Mixer initialized: {pygame.mixer.get_init()}")
         except pygame.error as e:
             print(f"Unable to load map music: {map_music_path}")
-            print(f"Error: {e}")
+            print(f"Pygame error: {e}")
+            import traceback
+            traceback.print_exc()
+        except Exception as e:
+            print(f"Exception loading map music: {e}")
+            import traceback
+            traceback.print_exc()
         
         # Load sound effects
         self.sfx_collision = None
@@ -327,19 +359,52 @@ class PokemonMapScene:
         except pygame.error as e:
             print(f"Unable to load cry 17 sound: {e}")
         
+        # Load Spore and SpikeCannon as Sound objects (WAV files work with Sound in pygbag/web)
         try:
-            spore_path = os.path.join(Config.SOUNDS_PATH, "Spore.mp3")
-            self.sfx_spore = pygame.mixer.Sound(spore_path)
-            self.sfx_spore.set_volume(self.sfx_volume)
+            spore_path = os.path.join(Config.SOUNDS_PATH, "spore.wav")
+            print(f"Loading Spore sound: {spore_path}")
+            file_exists = os.path.exists(spore_path)
+            print(f"Spore file exists: {file_exists}")
+            if file_exists:
+                self.sfx_spore = pygame.mixer.Sound(spore_path)
+                self.sfx_spore.set_volume(self.sfx_volume)
+                print(f"Spore sound loaded successfully")
+            else:
+                print(f"WARNING: spore.wav file not found at {spore_path}")
+                self.sfx_spore = None
         except pygame.error as e:
             print(f"Unable to load Spore sound: {e}")
+            self.sfx_spore = None
+            import traceback
+            traceback.print_exc()
+        except Exception as e:
+            print(f"Error loading Spore sound: {e}")
+            self.sfx_spore = None
+            import traceback
+            traceback.print_exc()
         
         try:
-            spike_cannon_path = os.path.join(Config.SOUNDS_PATH, "SpikeCannon.mp3")
-            self.sfx_spike_cannon = pygame.mixer.Sound(spike_cannon_path)
-            self.sfx_spike_cannon.set_volume(self.sfx_volume)
+            spike_cannon_path = os.path.join(Config.SOUNDS_PATH, "spikecannon.wav")
+            print(f"Loading spikecannon sound: {spike_cannon_path}")
+            file_exists = os.path.exists(spike_cannon_path)
+            print(f"spikecannon file exists: {file_exists}")
+            if file_exists:
+                self.sfx_spike_cannon = pygame.mixer.Sound(spike_cannon_path)
+                self.sfx_spike_cannon.set_volume(self.sfx_volume)
+                print(f"spikecannon sound loaded successfully")
+            else:
+                print(f"WARNING: spikecannon.wav file not found at {spike_cannon_path}")
+                self.sfx_spike_cannon = None
         except pygame.error as e:
-            print(f"Unable to load SpikeCannon sound: {e}")
+            print(f"Unable to load spikecannon sound: {e}")
+            self.sfx_spike_cannon = None
+            import traceback
+            traceback.print_exc()
+        except Exception as e:
+            print(f"Error loading spikecannon sound: {e}")
+            self.sfx_spike_cannon = None
+            import traceback
+            traceback.print_exc()
         
         # Track sound effect states to avoid playing multiple times
         self.exclamation_sound_played = False
@@ -1186,11 +1251,13 @@ class PokemonMapScene:
         self.current_direction = 1  # Start facing up
         
         # Restore map music when entering the scene
-        map_music_path = os.path.join(Config.SOUNDS_PATH, "32 Mt. Moon.mp3")
+        map_music_path = os.path.join(Config.SOUNDS_PATH, "mtmoon.wav")
         try:
             pygame.mixer.music.load(map_music_path)
             pygame.mixer.music.set_volume(self.music_volume)  # Set volume AFTER loading
-            pygame.mixer.music.play(-1)  # -1 means loop indefinitely
+            # Only play if user has interacted (browser autoplay policy)
+            if self.user_has_interacted:
+                pygame.mixer.music.play(-1)  # -1 means loop indefinitely
             self.battle_music_started = False  # Reset flag so battle music can play again
         except pygame.error as e:
             print(f"Unable to load map music: {map_music_path}")
@@ -1245,11 +1312,13 @@ class PokemonMapScene:
             if self.fight_ui:
                 self.fight_ui_alpha = 0
             # Start battle music
-            battle_music_path = os.path.join(Config.SOUNDS_PATH, "14 Battle! (Wild Pokémon).mp3")
+            battle_music_path = os.path.join(Config.SOUNDS_PATH, "battle.wav")
             try:
                 pygame.mixer.music.load(battle_music_path)
                 pygame.mixer.music.set_volume(self.music_volume)
-                pygame.mixer.music.play(-1)
+                # Only play if user has interacted (browser autoplay policy)
+                if self.user_has_interacted:
+                    pygame.mixer.music.play(-1)
                 self.battle_music_started = True
             except pygame.error as e:
                 print(f"Unable to load battle music: {battle_music_path}")
@@ -1402,11 +1471,13 @@ class PokemonMapScene:
                 
                 # Switch back to map music when returning to map
                 if self.battle_music_started:
-                    map_music_path = os.path.join(Config.SOUNDS_PATH, "32 Mt. Moon.mp3")
+                    map_music_path = os.path.join(Config.SOUNDS_PATH, "mtmoon.wav")
                     try:
                         pygame.mixer.music.load(map_music_path)
                         pygame.mixer.music.set_volume(self.music_volume)  # Set volume AFTER loading
-                        pygame.mixer.music.play(-1)  # -1 means loop indefinitely
+                        # Only play if user has interacted (browser autoplay policy)
+                        if self.user_has_interacted:
+                            pygame.mixer.music.play(-1)  # -1 means loop indefinitely
                         self.battle_music_started = False  # Reset flag so battle music can play again
                     except pygame.error as e:
                         print(f"Unable to load map music: {map_music_path}")
@@ -1758,6 +1829,22 @@ class PokemonMapScene:
         if self.lugia_state != "hidden" and not self.lugia_animation_complete:
             return  # Don't process movement during Lugia sequence
         
+        # Handle user interaction for browser autoplay policy
+        # Start music on first user interaction (key press, mouse click, or mouse movement)
+        if not self.user_has_interacted:
+            if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION):
+                self.user_has_interacted = True
+                self.show_start_prompt = False
+                # Now we can start playing music
+                if self.map_music_loaded and not pygame.mixer.music.get_busy():
+                    try:
+                        pygame.mixer.music.play(-1)  # -1 means loop indefinitely
+                        self.map_music_start_attempted = True  # Mark as attempted
+                        print(f"Map music started playing after user interaction")
+                    except Exception as e:
+                        print(f"Error starting music after user interaction: {e}")
+                        self.map_music_start_attempted = True  # Mark as attempted even on error
+        
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_UP, pygame.K_w):
                 self.moving_up = True
@@ -1801,14 +1888,28 @@ class PokemonMapScene:
     
     def update(self):
         """Update player movement and camera"""
+        # Start music after user interaction (for browser autoplay policy)
+        # Only try once, don't keep retrying every frame
+        if self.user_has_interacted and self.map_music_loaded and not hasattr(self, 'map_music_start_attempted'):
+            if not pygame.mixer.music.get_busy() and self.fade_state == "none" and not self.battle_music_started:
+                try:
+                    pygame.mixer.music.play(-1)
+                    self.map_music_start_attempted = True  # Mark as attempted so we don't retry
+                    print(f"Map music started in update() after user interaction")
+                except Exception as e:
+                    print(f"Error starting music in update(): {e}")
+                    self.map_music_start_attempted = True  # Mark as attempted even on error
+        
         # Ensure map music is playing when not in battle (safety check)
-        if self.fade_state == "none" and self.battle_music_started:
+        # Only play if user has interacted (browser autoplay policy)
+        if self.fade_state == "none" and self.battle_music_started and self.user_has_interacted:
             # We're back on the map but battle music is still playing - switch back
-            map_music_path = os.path.join(Config.SOUNDS_PATH, "32 Mt. Moon.mp3")
+            map_music_path = os.path.join(Config.SOUNDS_PATH, "mtmoon.wav")
             try:
                 pygame.mixer.music.load(map_music_path)
                 pygame.mixer.music.set_volume(self.music_volume)  # Set volume AFTER loading
-                pygame.mixer.music.play(-1)  # -1 means loop indefinitely
+                if self.user_has_interacted:
+                    pygame.mixer.music.play(-1)  # -1 means loop indefinitely
                 self.battle_music_started = False  # Reset flag
             except pygame.error as e:
                 print(f"Unable to load map music: {map_music_path}")
@@ -2188,6 +2289,30 @@ class PokemonMapScene:
                         self.dialog_slide_y = Config.SCREEN_HEIGHT
                         # Set dialog text (you can customize this)
                         self.dialog_text = "Bugia wants to battle!"
+                        # Preload battle music file when dialog appears (for pygbag/web compatibility)
+                        # This ensures the file is loaded and ready before the fade transition
+                        if not self.battle_music_preloaded:
+                            try:
+                                # Test load the battle music file to ensure it's accessible
+                                # We'll load it but not play it yet - just verify it can be loaded
+                                test_mixer = pygame.mixer
+                                if test_mixer.get_init():
+                                    # Try to load the file to verify it's accessible
+                                    # Note: This will stop current music, so we reload map music after
+                                    map_music_path = os.path.join(Config.SOUNDS_PATH, "mtmoon.wav")
+                                    pygame.mixer.music.load(self.battle_music_path)
+                                    # Immediately reload map music to continue playing
+                                    pygame.mixer.music.load(map_music_path)
+                                    pygame.mixer.music.set_volume(self.music_volume)
+                                    # Only play if user has interacted (browser autoplay policy)
+                                    if self.user_has_interacted:
+                                        pygame.mixer.music.play(-1)
+                                    self.battle_music_preloaded = True
+                                    print(f"Battle music file verified/loaded: {self.battle_music_path}")
+                            except Exception as e:
+                                print(f"Error preloading battle music: {e}")
+                                import traceback
+                                traceback.print_exc()
                 
                 # Play cry sound when Lugia reaches last frame
                 if self.lugia_current_frame == len(self.lugia_sprites) - 1 and not self.lugia_cry_played:
@@ -2243,19 +2368,46 @@ class PokemonMapScene:
         if self.fade_state == "fading":
             # Start battle music when map starts fading away
             if not self.battle_music_started:
-                battle_music_path = os.path.join(Config.SOUNDS_PATH, "14 Battle! (Wild Pokémon).mp3")
                 try:
-                    print(f"Loading battle music: {battle_music_path}")
-                    pygame.mixer.music.load(battle_music_path)
+                    # Ensure mixer is initialized (use default settings for WAV compatibility)
+                    if not pygame.mixer.get_init():
+                        pygame.mixer.init()
+                    
+                    # Stop current music first
+                    pygame.mixer.music.stop()
+                    
+                    # Load and play battle music
+                    # Since we verified the file earlier, it should load quickly
+                    print(f"Loading battle music: {self.battle_music_path}")
+                    file_exists = os.path.exists(self.battle_music_path)
+                    print(f"Battle music file exists: {file_exists}")
+                    if not file_exists:
+                        print(f"WARNING: Battle music file not found at {self.battle_music_path}")
+                    
+                    pygame.mixer.music.load(self.battle_music_path)
                     pygame.mixer.music.set_volume(self.music_volume)  # Set volume AFTER loading
-                    pygame.mixer.music.play(-1)  # -1 means loop indefinitely
+                    
+                    # Only play if user has interacted (browser autoplay policy)
+                    if self.user_has_interacted:
+                        # For pygbag/web: sometimes need to wait a frame before playing
+                        # Try playing immediately first
+                        pygame.mixer.music.play(-1)  # -1 means loop indefinitely
+                        
+                        print(f"Battle music started playing - mixer active: {pygame.mixer.get_init()}")
+                        print(f"Music busy status: {pygame.mixer.music.get_busy()}")
+                    else:
+                        print("Battle music loaded but waiting for user interaction")
+                    
                     self.battle_music_started = True
-                    print(f"Battle music started playing")
                 except pygame.error as e:
-                    print(f"Unable to load battle music: {battle_music_path}")
+                    print(f"Unable to load battle music: {self.battle_music_path}")
                     print(f"Error: {e}")
+                    import traceback
+                    traceback.print_exc()
                 except Exception as e:
                     print(f"Error loading battle music: {e}")
+                    import traceback
+                    traceback.print_exc()
             
             self.fade_alpha += self.fade_speed
             if self.fade_alpha >= 255:
@@ -2374,7 +2526,14 @@ class PokemonMapScene:
             # Animate Lugia GIF (always animate, never stops)
             if self.battle_lugia_visible and self.battle_lugia and self.battle_lugia_frames:
                 if len(self.battle_lugia_frames) > 1:
-                    self.battle_lugia_animation_time += self.battle_lugia_animation_speed
+                    # Use delta time for frame-rate independent animation
+                    delta_time = self.game.clock.get_time() / 1000.0  # Convert to seconds
+                    # Ensure delta_time is at least a small value to prevent animation freezing
+                    if delta_time <= 0:
+                        delta_time = 1.0 / 120.0  # Default to 120 FPS if clock.get_time() returns 0
+                    # Accumulate animation time
+                    self.battle_lugia_animation_time += self.battle_lugia_animation_speed * delta_time * 60  # Scale to 60 FPS
+                    # Update frame when threshold is reached
                     if self.battle_lugia_animation_time >= 1.0:
                         self.battle_lugia_animation_time = 0
                         self.battle_lugia_current_frame = (self.battle_lugia_current_frame + 1) % len(self.battle_lugia_frames)
@@ -2408,7 +2567,9 @@ class PokemonMapScene:
                 # Animate trainer sprite only after everything has animated in
                 if self.battle_trainer_can_animate and self.battle_trainer_x == self.battle_trainer_target_x and not self.battle_trainer_slide_out:
                     # Animate trainer sprite
-                    self.battle_trainer_animation_time += self.battle_trainer_animation_speed
+                    # Use delta time for frame-rate independent animation
+                    delta_time = self.game.clock.get_time() / 1000.0  # Convert to seconds
+                    self.battle_trainer_animation_time += self.battle_trainer_animation_speed * delta_time * 60  # Scale to 60 FPS
                     if self.battle_trainer_animation_time >= 1.0:
                         self.battle_trainer_animation_time = 0
                         # Only advance frame if not at last frame
@@ -2506,7 +2667,7 @@ class PokemonMapScene:
                         if not self.screen_shake_triggered_after_pulse:
                             self.screen_shake_triggered_after_pulse = True
                             self.screen_shake_active = True
-                            # Play SpikeCannon.mp3 when Lugia starts rotating side to side
+                            # Play spikecannon.wav when Lugia starts rotating side to side
                             if self.sfx_spike_cannon and not self.spike_cannon_sound_played:
                                 self.sfx_spike_cannon.play()
                                 self.spike_cannon_sound_played = True
@@ -2570,7 +2731,14 @@ class PokemonMapScene:
                 
                 # Animate Venusaur GIF
                 if len(self.battle_venu_frames) > 1:
-                    self.battle_venu_animation_time += self.battle_venu_animation_speed
+                    # Use delta time for frame-rate independent animation
+                    delta_time = self.game.clock.get_time() / 1000.0  # Convert to seconds
+                    # Ensure delta_time is at least a small value to prevent animation freezing
+                    if delta_time <= 0:
+                        delta_time = 1.0 / 120.0  # Default to 120 FPS if clock.get_time() returns 0
+                    # Accumulate animation time
+                    self.battle_venu_animation_time += self.battle_venu_animation_speed * delta_time * 60  # Scale to 60 FPS
+                    # Update frame when threshold is reached
                     if self.battle_venu_animation_time >= 1.0:
                         self.battle_venu_animation_time = 0
                         self.battle_venu_current_frame = (self.battle_venu_current_frame + 1) % len(self.battle_venu_frames)
@@ -2578,7 +2746,9 @@ class PokemonMapScene:
             
             # Animate prompt pulse charge sprite (when attack sequence begins - venusaur is centered)
             if self.venusaur_centered and not self.prompt_pulse_charge_complete and len(self.prompt_pulse_charge_frames) > 1:
-                self.prompt_pulse_charge_animation_time += self.prompt_pulse_charge_animation_speed
+                # Use delta time for frame-rate independent animation
+                delta_time = self.game.clock.get_time() / 1000.0  # Convert to seconds
+                self.prompt_pulse_charge_animation_time += self.prompt_pulse_charge_animation_speed * delta_time * 60  # Scale to 60 FPS
                 if self.prompt_pulse_charge_animation_time >= 1.0:
                     self.prompt_pulse_charge_animation_time = 0
                     self.prompt_pulse_charge_current_frame += 1
@@ -2849,11 +3019,13 @@ class PokemonMapScene:
                                         self.end_scene_elements_fade_alpha = 255
                                         # Switch to end scene music when black background appears
                                         if not self.end_scene_music_played:
-                                            end_scene_music_path = os.path.join(Config.SOUNDS_PATH, "01. Opening Movie (Red, Green & Blue Version).mp3")
+                                            end_scene_music_path = os.path.join(Config.SOUNDS_PATH, "open.wav")
                                             try:
                                                 pygame.mixer.music.load(end_scene_music_path)
                                                 pygame.mixer.music.set_volume(self.music_volume)  # Set volume AFTER loading
-                                                pygame.mixer.music.play(-1)  # -1 means loop indefinitely
+                                                # Only play if user has interacted (browser autoplay policy)
+                                                if self.user_has_interacted:
+                                                    pygame.mixer.music.play(-1)  # -1 means loop indefinitely
                                                 self.end_scene_music_played = True
                                             except pygame.error as e:
                                                 print(f"Unable to load end scene music: {end_scene_music_path}")
@@ -3250,7 +3422,7 @@ class PokemonMapScene:
                     # Check if venusaur has reached center
                     if progress >= venusaur_center_progress and not self.venusaur_centered:
                         self.venusaur_centered = True
-                        # Play Spore.mp3 when prompt pulse charge begins
+                        # Play spore.wav when prompt pulse charge begins
                         if self.sfx_spore and not self.spore_sound_played:
                             self.sfx_spore.play()
                             self.spore_sound_played = True
@@ -3286,6 +3458,23 @@ class PokemonMapScene:
     
     def render(self, screen):
         """Render house/village scene with scrolling map"""
+        # Show "Click to Start" overlay until user interacts (for browser autoplay policy)
+        if self.show_start_prompt and not self.user_has_interacted:
+            # Draw semi-transparent overlay
+            overlay = pygame.Surface((Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT))
+            overlay.set_alpha(200)
+            overlay.fill((0, 0, 0))
+            screen.blit(overlay, (0, 0))
+            # Draw "Click to Start" text
+            if hasattr(self, 'dialog_font'):
+                start_text = self.dialog_font.render("Click or Press Any Key to Start", True, (255, 255, 255))
+            else:
+                font = pygame.font.Font(None, 36)
+                start_text = font.render("Click or Press Any Key to Start", True, (255, 255, 255))
+            text_rect = start_text.get_rect(center=(Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 2))
+            screen.blit(start_text, text_rect)
+            return  # Don't render the game until user interacts
+        
         # Helper function to apply shake offset to positions
         def apply_shake_offset(x, y):
             if self.screen_shake_active:

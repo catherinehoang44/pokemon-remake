@@ -16,7 +16,16 @@ from scenes.pokemon_selection import PokemonSelectionScene
 
 class Game:
     def __init__(self):
+        # Initialize mixer before pygame.init() for better web compatibility
+        # For pygbag/web: use default parameters which work better with WAV files
+        try:
+            pygame.mixer.pre_init()
+        except:
+            pass  # If pre_init fails, regular init will be called
         pygame.init()
+        # Ensure mixer is initialized with default settings (better for web/WAV)
+        if not pygame.mixer.get_init():
+            pygame.mixer.init()
         self.screen = pygame.display.set_mode((Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT))
         pygame.display.set_caption(Config.GAME_TITLE)
         self.clock = pygame.time.Clock()
@@ -54,11 +63,16 @@ class Game:
     
     async def run(self):
         """Main game loop"""
+        # For web/pygbag: need to call clock.tick() to update internal clock
+        # This allows clock.get_time() to work correctly for animations
+        # We use a high FPS limit to avoid performance issues
         while self.running:
             self.handle_events()
             self.update()
             self.render()
-            self.clock.tick(Config.FPS)
+            # Call clock.tick() to update internal clock (needed for clock.get_time())
+            # Use high FPS limit for web compatibility
+            self.clock.tick(120)  # 120 FPS limit should be fine for web
             await asyncio.sleep(0)
 
 
